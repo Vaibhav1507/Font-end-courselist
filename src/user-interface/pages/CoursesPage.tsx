@@ -9,6 +9,7 @@ interface CoursesPageProperties {
 
 interface CoursesPageState {
 	courseList: CourseSearchResult[],
+	filteredCourseList: CourseSearchResult[],
 	courseFirstIndex: number,
 	courseLastIndex: number,
 	currentPageNumber: number,
@@ -27,7 +28,8 @@ class CoursesPage extends React.Component<CoursesPageProperties, CoursesPageStat
 			currentPageNumber: 1,
 			numberOfItemsPerPage: 20,
 			searchTerm: "",
-			sortOrder: 1
+			sortOrder: 1,
+			filteredCourseList: []
 		}
 	}
 
@@ -38,37 +40,58 @@ class CoursesPage extends React.Component<CoursesPageProperties, CoursesPageStat
 			this.setState({
 				courseList: response.publicLearningPathResults
 			})
+			console.log(this.state.courseList[0]);
+			
+			this.setUrlSearchParameters();
 		})
 		.catch(error => {
 			console.log(error)
 		})
-		this.setUrlSearchParameters();
 	}
 
 	getFilteredCourseList() {
 		//search text filter
-		this.state.courseList.filter((course) => {
+		this.searchFilter();
+		
+
+		//pagination
+		this.pagination();
+		
+
+		//sorting
+		this.sorting();
+	}
+
+	searchFilter(){
+		this.setState({filteredCourseList:this.state.courseList.filter((course) => {
 			if(this.state.searchTerm == ""){
 				return course;
 			}
 			else if(course.name.toLowerCase().includes(this.state.searchTerm)){
 				return course;
 			}
+		})})
+	}
+
+	pagination() {
+		this.setState({
+			courseLastIndex: this.state.currentPageNumber * this.state.numberOfItemsPerPage
 		})
 
-		//pagination
 		this.setState({
-			courseLastIndex: this.state.currentPageNumber * this.state.numberOfItemsPerPage,
 			courseFirstIndex: this.state.courseLastIndex - this.state.numberOfItemsPerPage
 		})
 
-		const filteredCourseList = this.state.courseList.slice(this.state.courseFirstIndex, this.state.courseLastIndex);
+		this.setState({filteredCourseList: this.state.filteredCourseList.slice(this.state.courseFirstIndex, this.state.courseLastIndex)});
+	}
 
-		//sorting
+	sorting(){
 		switch (this.state.sortOrder) {
 			//MostRelevant = 1
 			case 1:
-				
+				this.setState({
+					filteredCourseList: this.state.filteredCourseList.sort((a, b) =>  b.id - a.id)
+				})
 				break;
 			//Popularity = 2
 			case 2:
@@ -77,17 +100,19 @@ class CoursesPage extends React.Component<CoursesPageProperties, CoursesPageStat
 			
 			//MostRecent = 3
 			case 3:
-				
+				this.setState({
+					filteredCourseList: this.state.filteredCourseList.sort((a, b) =>  { return +new Date(b.creationDate) - +new Date(a.creationDate)})
+				})
 				break;
 			//Oldest = 4
 			case 4:
-				
+				this.setState({
+					filteredCourseList: this.state.filteredCourseList.sort((a, b) => { return +new Date(a.creationDate) - +new Date(b.creationDate)})
+					})
 				break;
 			default:
 				break;
 		}
-
-		return filteredCourseList;
 	}
 
 	setUrlSearchParameters() {
@@ -119,7 +144,7 @@ class CoursesPage extends React.Component<CoursesPageProperties, CoursesPageStat
 
 		if (searchParams.get('sortOrder')) {
 			this.setState({
-				numberOfItemsPerPage: (Number)(searchParams.get('sortOrder'))
+				sortOrder: (Number)(searchParams.get('sortOrder'))
 			})
 		} else {
 			searchParams.set("sortOrder", this.state.sortOrder.toString());
@@ -127,21 +152,23 @@ class CoursesPage extends React.Component<CoursesPageProperties, CoursesPageStat
 
 		let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + searchParams.toString();
 		window.history.pushState({ path: newurl }, '', newurl);
+		
+		this.getFilteredCourseList();
 	}
 	
 
 	public render(): JSX.Element {
-		if(this.state.courseList.length === 0){
-			return <></>;
+		if(this.state.filteredCourseList.length === 0){
+			return <>
+				<h1 style={{textAlign:"center"}}>No course found</h1>
+			</>;
 		}
 		return (
-			<div className="courses-page container">
+			<div className="courses-page">
 				<div className="row">
-					<div className="row">
-						{this.state.courseList.map((item) => { 
+						{this.state.filteredCourseList.map((item) => { 
 							return <CourseCard key={item.id} course={item}/>
 						})}
-					</div>
 				</div>
 			</div>
 		);

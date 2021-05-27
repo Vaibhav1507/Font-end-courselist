@@ -53,3 +53,17 @@ The model corresponding to the return of the web service is already in the proje
 `/src/web-service/models/CourseSearchResultList.ts`
 
 **IMPORTANT: Note that we don't allow `localhost:3000` in the `Access-Control-Allow-Origin` response headers of `lx.festo.com`, so you'll have to bypass the CORS. You can easily deal with this issue by installing a web browser plugin or using a proxy like `https://cors-anywhere.herokuapp.com/`.**
+
+
+**Explanation**
+
+- In CoursesPage.tsr component inside component did mount life cycle method real time time gets loaded using "https://lx.festo.com/SearchService/api/search/learning-paths/public" into an array of objects.
+- Once data gets loaded qery string parameters will be attached in the URL with its default values.(term, page, size, sort)
+    "http://localhost:3000/courses?term=&page=1&size=20&sortOrder=1"
+- Then one function will be called which will filter and arrange objects based on the query parameters. User can change values in the   URL it self and list will be updated accordingly.
+    for ex:-
+        1.For sortOrder MostRecent user can set sortOrder as 3 in the URL ("http://localhost:3000/courses?term=&page=1&size=20&sortOrder=3")
+        2. To change page number: page ("http://localhost:3000/courses?term=&page=2&size=20&sortOrder=1").
+        3. To change number of items per page: size  ("http://localhost:3000/courses?term=&page=1&size=10&sortOrder=1").
+        4. For search filter: term ("http://localhost:3000/courses?term=energy&page=1&size=10&sortOrder=1").
+- To see more details click on show more option it will open modal popup which will display the description of the course.
